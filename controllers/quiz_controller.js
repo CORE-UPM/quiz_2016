@@ -33,6 +33,21 @@ exports.ownershipRequired = function(req, res, next){
 };
 
 
+ //SEARCH /quizzes?search=texto_a_buscar
+ exports.search = function(req, res, next){
+   var texto_a_buscar= req.query.search || "";
+   models.Quiz.findAll({
+     where: {
+       question:{
+         $like: "%" + texto_a_buscar + "%"
+       }
+     }
+   }).then(function(quizzes){
+     res.render('quizzes/index.ejs', {quizzes:quizzes});
+   }).catch(function(error){next(error);});
+}; 
+
+
 // GET /quizzes
 exports.index = function(req, res, next) {
 	models.Quiz.findAll()
@@ -48,12 +63,14 @@ exports.index = function(req, res, next) {
 // GET /quizzes/:id
 exports.show = function(req, res, next) {
 
-	var answer = req.query.answer || '';
-
-	res.render('quizzes/show', {quiz: req.quiz,
-								answer: answer});
+	models.Quiz.findAll()
+     .then(function(quizzes) {
+       res.render('quizzes/index.ejs', { quizzes: quizzes});
+     })
+     .catch(function(error) {
+       next(error);
+     });
 };
-
 
 // GET /quizzes/:id/check
 exports.check = function(req, res, next) {
@@ -152,8 +169,3 @@ exports.destroy = function(req, res, next) {
       next(error);
     });
 };
-
-
-
-
-

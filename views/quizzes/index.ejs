@@ -26,6 +26,11 @@
   <% } %>
 </table>
 
+<form method="get" action="/quizzes/search">
+   <input type="text" placeholder="Búsqueda" name="search" id="search" />
+     <button type="submit">Buscar</button>
+</form>
+
 <% if (session.user) { %>
   <a href="/quizzes/new"><button type="button">Crear pregunta</button></a>
 <% } %>

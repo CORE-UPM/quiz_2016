@@ -6,14 +6,14 @@ var Sequelize = require('sequelize');
 exports.load = function(req, res, next, quizId) {
 	models.Quiz.findById(quizId, { include: [ models.Comment ] })
   		.then(function(quiz) {
-      		if (quiz) {
-        		req.quiz = quiz;
-        		next();
-      		} else { 
-      			throw new Error('No existe quizId=' + quizId);
-      		}
-        })
-        .catch(function(error) { next(error); });
+					if (quiz) {
+						req.quiz = quiz;
+						next();
+					} else { 
+						throw new Error('No existe quizId=' + quizId);
+					}
+				})
+				.catch(function(error) { next(error); });
 };
 
 
@@ -38,12 +38,17 @@ exports.index = function(req, res, next) {
 
   var search = req.query.search || "";
   search = search.replace(" ","%");//.replace("+","%");
+  var format = req.params.format || "html";
 	models.Quiz.findAll({
              where: {question: {$like: "%" + search + "%"}},
-             include: [ {model: models.Attachment}]
+         
             })
 		.then(function(quizzes) {
+			if (format==="json"){
+			res.json({ quizzes: quizzes});
+		}else{
 			res.render('quizzes/index.ejs', { quizzes: quizzes});
+		}
 		})
 		.catch(function(error) {
 			next(error);
@@ -55,9 +60,13 @@ exports.index = function(req, res, next) {
 exports.show = function(req, res, next) {
 
 	var answer = req.query.answer || '';
+	var format = req.params.format || "html";
 
-	res.render('quizzes/show', {quiz: req.quiz,
-								answer: answer});
+if (format==="json"){
+	res.json({quiz: req.quiz, answer: answer});
+	}else{
+		res.render('quizzes/show', {quiz: req.quiz, answer: answer});
+	}
 };
 
 
@@ -83,31 +92,42 @@ exports.new = function(req, res, next) {
 // POST /quizzes/create
 exports.create = function(req, res, next) {
 
-  var authorId = req.session.user && req.session.user.id || 0;
+var authorId = req.session.user && req.session.user.id || 0;
+	var quiz = { question: req.body.question, 
+								 answer:   req.body.answer,
+								 AuthorId: authorId };
 
-  var quiz = models.Quiz.build({ question: req.body.quiz.question, 
-  	                             answer:   req.body.quiz.answer,
-                                 AuthorId: authorId } );
+		// Guarda en la tabla Quizzes el nuevo quiz.
+		models.Quiz.create(quiz)
+		.then(function(quiz) {
+				req.flash('success', 'Pregunta y Respuesta guardadas con éxito.');
 
-  // guarda en DB los campos pregunta y respuesta de quiz
-  quiz.save({fields: ["question", "answer", "AuthorId"]})
-  	.then(function(quiz) {
-		  req.flash('success', 'Quiz creado con éxito.');
-    	res.redirect('/quizzes');  // res.redirect: Redirección HTTP a lista de preguntas
-    })
-    .catch(Sequelize.ValidationError, function(error) {
+				if (!req.file) { 
+						req.flash('info', 'Es un Quiz sin imagen.');
+						return; 
+				}    
 
-      req.flash('error', 'Errores en el formulario:');
-      for (var i in error.errors) {
-          req.flash('error', error.errors[i].value);
-      };
-
-      res.render('quizzes/new', {quiz: quiz});
-    })
-    .catch(function(error) {
-		  req.flash('error', 'Error al crear un Quiz: '+error.message);
-		  next(error);
-	});  
+				// Salvar la imagen en Cloudinary
+				return uploadResourceToCloudinary(req)
+				.then(function(uploadResult) {
+						// Crear nuevo attachment en la BBDD.
+						return createAttachment(req, uploadResult, quiz);
+				});
+		})
+		.then(function() {
+				res.redirect('/quizzes');
+		})
+		.catch(Sequelize.ValidationError, function(error) {
+				req.flash('error', 'Errores en el formulario:');
+				for (var i in error.errors) {
+						req.flash('error', error.errors[i].value);
+				};
+				res.render('quizzes/new', {quiz: quiz});
+		})
+		.catch(function(error) {
+				req.flash('error', 'Error al crear un Quiz: '+error.message);
+				next(error);
+		}); 
 };
 
 

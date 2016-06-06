@@ -40,6 +40,22 @@ app.use(function(req, res, next) {
 
    next();
 });
+app.use(function(req, res, next) {
+	var tAutologout = 1000*60*2;	// tiempo de autoloout en milisegundos = 1000(ms/s) * 60(s/min) * 2 = 2 minutos
+	var user = req.session.user;
+	var tNow = new Date();			// objeto Date
+	var tAction = tNow.getTime();	// tiempo actual
+
+	if (!user) {
+		next();
+	} else if (tAction-user.tLastAction>=tAutologout) {
+	delete req.session.user;
+		next();
+	} else{
+		user.tLastAction = tAction;
+		next();
+	}
+});
 
 app.use('/', routes);
 

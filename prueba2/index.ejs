@@ -1,0 +1,20 @@
+<table>
+  <% for (var i in quizzes) { %>
+    <tr>
+      <td>
+        <a href="/quizzes/<%= quizzes[i].id %>"><%= quizzes[i].question %></a>
+      </td>
+      <td>
+        <a href="/quizzes/<%= quizzes[i].id %>/edit"><button>editar</button></a>
+      </td>
+      <td>
+        <a href="/quizzes/<%= quizzes[i].id %>?method=DELETE"
+          onClick="return confirm('Borrar: <%= quizzes[i].question %>');">
+          <button>borrar</button>
+        </a>
+      </td>
+    </tr>
+  <% } %>
+</table>
+
+<a href="/quizzes/new"><button type="button">Crear pregunta</button></a>

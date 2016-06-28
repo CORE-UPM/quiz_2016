@@ -57,6 +57,8 @@ router.put('/quizzes/:quizId(\\d+)',       	sessionController.loginRequired,
 router.delete('/quizzes/:quizId(\\d+)',    	sessionController.loginRequired, 
 											quizController.ownershipRequired, 
 											quizController.destroy);
+router.get('/quizzes/search' , quizController.search);
+
 
 // Definición de rutas de comentarios
 router.get('/quizzes/:quizId(\\d+)/comments/new',  sessionController.loginRequired, 
@@ -67,5 +69,11 @@ router.put('/quizzes/:quizId(\\d+)/comments/:commentId(\\d+)/accept',
 	                                               sessionController.loginRequired, 
 	                                               quizController.ownershipRequired, 
 	                                               commentController.accept);
+
+router.get('/author', function(req, res, next){
+	res.render('author', { link:'<a href="https://github.com/ibarriospal/quiz">Proyecto en github</a>',
+		foto1: '<img src="foto.jpg">',
+	})
+});
 
 module.exports = router;
